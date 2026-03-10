@@ -100,7 +100,15 @@ make format    # run formatter
 
 ## Troubleshooting
 
-**App doesn't start**: Check Docker is running and `.env` exists with `OLLAMA_API_KEY` set. Run `make rebuild` to start fresh.
+**App doesn't start**: Check Docker is running and `.env` exists with `LLM_API_KEY` set. Try `make down && make up`. If that doesn't work, `make rebuild` will start fresh (this wipes the database).
+
+**Image pull fails**: If `make up` fails pulling the Postgres or Elixir images, pull them explicitly first:
+
+```sh
+docker compose --profile local-db pull
+```
+
+Then retry `make up`. If you're on a shared network or hitting Docker Hub rate limits, you may need to `docker login` first.
 
 **Generation fails**: Check `make logs` for errors. Verify your API key and that the configured model is available on your endpoint.
 

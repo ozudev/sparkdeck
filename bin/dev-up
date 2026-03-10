@@ -21,6 +21,7 @@ echo "Starting Sparkdeck with its own Postgres on host port ${POSTGRES_PORT}"
 export POSTGRES_HOST="db"
 export DATABASE_URL="ecto://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
 
+docker compose --profile local-db pull
 docker compose --profile local-db up --build
 
 echo "Sparkdeck should be available at http://localhost:${APP_PORT}"
