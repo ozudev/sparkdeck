@@ -21,7 +21,10 @@ echo "Starting Sparkdeck with its own Postgres on host port ${POSTGRES_PORT}"
 export POSTGRES_HOST="db"
 export DATABASE_URL="ecto://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
 
-docker compose --profile local-db pull
+echo "Pulling images..."
+docker pull postgres:16
+docker pull hexpm/elixir:1.19.1-erlang-28.0-debian-bullseye-20251117
+
 docker compose --profile local-db up --build
 
 echo "Sparkdeck should be available at http://localhost:${APP_PORT}"

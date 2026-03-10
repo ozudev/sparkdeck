@@ -102,13 +102,16 @@ make format    # run formatter
 
 **App doesn't start**: Check Docker is running and `.env` exists with `LLM_API_KEY` set. Try `make down && make up`. If that doesn't work, `make rebuild` will start fresh (this wipes the database).
 
-**Image pull fails**: If `make up` fails pulling the Postgres or Elixir images, pull them explicitly first:
+**Image pull fails**: If `make up` fails pulling images, try pulling them explicitly:
 
 ```sh
-docker compose --profile local-db pull
+docker pull postgres:16
+docker pull hexpm/elixir:1.19.1-erlang-28.0-debian-bullseye-20251117
 ```
 
-Then retry `make up`. If you're on a shared network or hitting Docker Hub rate limits, you may need to `docker login` first.
+Then retry `make up`.
+
+**`docker-credential-desktop` error**: If you see `executable file not found in $PATH`, your Docker credential helper is misconfigured. Fix it by editing `~/.docker/config.json` and changing `credsStore` from `desktop` to `osxkeychain`, or remove the `credsStore` line entirely.
 
 **Generation fails**: Check `make logs` for errors. Verify your API key and that the configured model is available on your endpoint.
 
