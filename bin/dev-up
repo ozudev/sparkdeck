@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+if [[ -f .env ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
+fi
+
+POSTGRES_USER="${POSTGRES_USER:-postgres}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
+POSTGRES_DB="${POSTGRES_DB:-sparkdeck_dev}"
+POSTGRES_PORT="${POSTGRES_PORT:-5433}"
+APP_PORT="${PORT:-4010}"
+
+echo "Starting Sparkdeck with its own Postgres on host port ${POSTGRES_PORT}"
+export POSTGRES_HOST="db"
+export DATABASE_URL="ecto://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+
+docker compose --profile local-db up --build
+
+echo "Sparkdeck should be available at http://localhost:${APP_PORT}"

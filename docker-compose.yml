@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16
+    profiles: ["local-db"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-sparkdeck_dev}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sparkdeck_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build:
+      context: .
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-sparkdeck_dev}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: 5432
+      DATABASE_URL: ${DATABASE_URL:-ecto://postgres:postgres@db:5432/sparkdeck_dev}
+      LLM_HOST: ${LLM_HOST:-https://ollama.com}
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_MODEL: ${LLM_MODEL:-gpt-oss:120b}
+      LLM_PROMPT_VERSION: ${LLM_PROMPT_VERSION:-v1}
+      PHX_HOST: ${PHX_HOST:-localhost}
+      PHX_SERVER: "true"
+      PORT: ${PORT:-4010}
+    ports:
+      - "${PORT:-4010}:${PORT:-4010}"
+    volumes:
+      - .:/app
+      - deps:/app/deps
+      - build:/app/_build
+
+volumes:
+  postgres_data:
+  deps:
+  build:
