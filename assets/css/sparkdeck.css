@@ -52,6 +52,7 @@
 html {
   min-height: 100%;
   background: var(--bg);
+  scroll-behavior: smooth;
 }
 
 body {
@@ -580,6 +581,7 @@ select {
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
+  text-decoration: none;
   transition: border-color 160ms ease, color 160ms ease;
 }
 
@@ -601,6 +603,7 @@ select {
 .brief-section {
   padding: 28px 0;
   border-bottom: 1px solid var(--line);
+  scroll-margin-top: 24px;
 }
 
 .brief-section:first-child {
