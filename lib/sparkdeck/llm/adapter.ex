@@ -5,7 +5,7 @@ defmodule Sparkdeck.LLM.Adapter do
   """
   @behaviour Instructor.Adapter
 
-  @receive_timeout 120_000
+  @receive_timeout 600_000
 
   @impl true
   def chat_completion(params, config \\ nil) do
@@ -37,18 +37,24 @@ defmodule Sparkdeck.LLM.Adapter do
 
     case Req.post(url, json: body, headers: headers, receive_timeout: timeout) do
       {:ok, %Req.Response{status: 200, body: body}} ->
-        with content when is_binary(content) <-
-               get_in(body, ["choices", Access.at(0), "message", "content"]),
-             cleaned <- strip_markdown_fences(content),
-             {:ok, parsed} <- Jason.decode(cleaned) do
-          {:ok, body, parsed}
-        else
-          nil ->
-            {:error, "No content in LLM response"}
+        finish_reason = get_in(body, ["choices", Access.at(0), "finish_reason"])
 
-          {:error, %Jason.DecodeError{position: pos, data: data}} ->
-            snippet = String.slice(data, max(pos - 40, 0), 80)
-            {:error, "Invalid JSON at position #{pos}: ...#{snippet}..."}
+        if finish_reason == "length" do
+          {:error, "LLM response was truncated (hit token limit). Increase max tokens in your LLM server settings."}
+        else
+          with content when is_binary(content) <-
+                 get_in(body, ["choices", Access.at(0), "message", "content"]),
+               cleaned <- strip_markdown_fences(content),
+               {:ok, parsed} <- Jason.decode(cleaned) do
+            {:ok, body, parsed}
+          else
+            nil ->
+              {:error, "No content in LLM response"}
+
+            {:error, %Jason.DecodeError{position: pos, data: data}} ->
+              snippet = String.slice(data, max(pos - 40, 0), 80)
+              {:error, "Invalid JSON at position #{pos}: ...#{snippet}..."}
+          end
         end
 
       {:ok, %Req.Response{status: status, body: body}} ->

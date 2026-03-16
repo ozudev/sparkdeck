@@ -5,11 +5,14 @@ defmodule Sparkdeck.LLM.Client do
     model = Keyword.get(opts, :model, Application.fetch_env!(:sparkdeck, :llm_model))
     max_retries = Keyword.get(opts, :max_retries, 3)
 
+    max_tokens = Keyword.get(opts, :max_tokens, 16_384)
+
     instructor_opts = [
       model: model,
       response_model: response_model,
       max_retries: max_retries,
       mode: :json,
+      max_tokens: max_tokens,
       messages: messages
     ]
 
