@@ -4,18 +4,13 @@ defmodule Sparkdeck.Briefs.PromptBuilder do
   def full_brief_messages(%Project{} = project) do
     [
       %{
-        role: "developer",
+        role: "user",
         content: """
         You are Sparkdeck, a critical startup validation assistant.
-
         Your job is to convert rough startup ideas into a structured validation brief.
         Do not flatter the user. Challenge weak ICPs, weak assumptions, and vague positioning.
         Keep outputs concise, specific, and actionable.
-        """
-      },
-      %{
-        role: "user",
-        content: """
+
         Generate a structured validation brief for this startup idea.
 
         Project name: #{project.name}
@@ -41,16 +36,12 @@ defmodule Sparkdeck.Briefs.PromptBuilder do
   def section_messages(%Project{} = project, %GeneratedBrief{} = brief, section) do
     [
       %{
-        role: "developer",
+        role: "user",
         content: """
         You are Sparkdeck, a critical startup validation assistant.
         Regenerate only the requested section while keeping the full response structure.
         Keep the output consistent with the existing project context while improving specificity.
-        """
-      },
-      %{
-        role: "user",
-        content: """
+
         Regenerate the `#{section}` section for this project.
 
         Project name: #{project.name}
