@@ -1,6 +1,7 @@
 defmodule SparkdeckWeb.ProjectLive.Show do
   use SparkdeckWeb, :live_view
 
+  alias Phoenix.LiveView.JS
   alias Sparkdeck.Workspace
 
   @regenerable_sections [
@@ -15,6 +16,19 @@ defmodule SparkdeckWeb.ProjectLive.Show do
     {"risks", "Risks"}
   ]
 
+  # Maps nav chip keys to the first section ID they should scroll to
+  @section_anchors %{
+    "summary" => "section-summary",
+    "icp_analysis" => "section-icp-analysis",
+    "value_proposition" => "section-value-proposition",
+    "landing_page_content" => "section-landing-page",
+    "creative_direction" => "section-creative-direction",
+    "interview_questions" => "section-interview-questions",
+    "go_to_market" => "section-go-to-market",
+    "fundraising_plan" => "section-fundraising-plan",
+    "risks" => "section-risks"
+  }
+
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     {project, brief} = Workspace.get_project_with_latest_brief!(id)
@@ -24,6 +38,7 @@ defmodule SparkdeckWeb.ProjectLive.Show do
      |> assign(page_title: project.name)
      |> assign(project: project, brief: brief, generating?: false)
      |> assign(regenerable_sections: @regenerable_sections)
+     |> assign(section_anchors: @section_anchors)
      |> assign(show_inputs: false)
      |> assign_project_form(project)}
   end
@@ -96,41 +111,46 @@ defmodule SparkdeckWeb.ProjectLive.Show do
           </div>
 
           <%= if @brief do %>
-            <div class="brief-section-nav">
+            <nav class="brief-section-nav">
               <button
                 :for={{section, label} <- @regenerable_sections}
                 type="button"
-                phx-click="regenerate_section"
-                phx-value-section={section}
+                phx-click={
+                  JS.dispatch("sparkdeck:scroll-to",
+                    detail: %{target: @section_anchors[section]}
+                  )
+                  |> JS.push("regenerate_section", value: %{section: section})
+                }
                 class="brief-section-chip"
                 disabled={@generating?}
               >
                 {label}
               </button>
-            </div>
+            </nav>
 
             <div class="brief-content">
-              <.text_section title="Summary" body={@brief.summary} />
-              <.text_section title="ICP Analysis" body={@brief.icp_analysis} />
-              <.list_section title="ICP Recommendations" items={@brief.icp_recommendations} />
-              <.list_section title="Overlooked Segments" items={@brief.overlooked_segments} />
-              <.list_section title="Pain Points" items={@brief.pain_points} />
-              <.text_section title="Value Proposition" body={@brief.value_proposition} />
-              <.list_section title="MVP Features" items={@brief.mvp_features} />
+              <.text_section id="section-summary" title="Summary" body={@brief.summary} />
+              <.text_section id="section-icp-analysis" title="ICP Analysis" body={@brief.icp_analysis} />
+              <.list_section id="section-icp-recommendations" title="ICP Recommendations" items={@brief.icp_recommendations} />
+              <.list_section id="section-overlooked-segments" title="Overlooked Segments" items={@brief.overlooked_segments} />
+              <.list_section id="section-pain-points" title="Pain Points" items={@brief.pain_points} />
+              <.text_section id="section-value-proposition" title="Value Proposition" body={@brief.value_proposition} />
+              <.list_section id="section-mvp-features" title="MVP Features" items={@brief.mvp_features} />
               <.list_section
                 :if={Enum.any?(@brief.alternate_approaches)}
+                id="section-alternate-approaches"
                 title="Alternate Approaches"
                 items={@brief.alternate_approaches}
               />
-              <.landing_page_section content={@brief.landing_page_content} />
-              <.keyed_section title="Creative Direction" data={@brief.creative_direction} />
-              <.list_section title="Interview Questions" items={@brief.interview_questions} />
-              <.keyed_section title="Interview Signals" data={@brief.interview_signals} />
-              <.keyed_section title="Validation Checklist" data={@brief.validation_checklist} />
-              <.keyed_section title="Go to Market" data={@brief.go_to_market} />
-              <.keyed_section title="Fundraising Plan" data={@brief.fundraising_plan} />
-              <.list_section title="Risks" items={@brief.risks} />
-              <.list_section title="Next Steps" items={@brief.next_steps} />
+              <.landing_page_section id="section-landing-page" content={@brief.landing_page_content} />
+              <.keyed_section id="section-creative-direction" title="Creative Direction" data={@brief.creative_direction} />
+              <.list_section id="section-interview-questions" title="Interview Questions" items={@brief.interview_questions} />
+              <.keyed_section id="section-interview-signals" title="Interview Signals" data={@brief.interview_signals} />
+              <.keyed_section id="section-validation-checklist" title="Validation Checklist" data={@brief.validation_checklist} />
+              <.keyed_section id="section-go-to-market" title="Go to Market" data={@brief.go_to_market} />
+              <.keyed_section id="section-fundraising-plan" title="Fundraising Plan" data={@brief.fundraising_plan} />
+              <.list_section id="section-risks" title="Risks" items={@brief.risks} />
+              <.list_section id="section-next-steps" title="Next Steps" items={@brief.next_steps} />
             </div>
           <% else %>
             <div class="brief-empty">
@@ -219,24 +239,26 @@ defmodule SparkdeckWeb.ProjectLive.Show do
 
   # -- Components --
 
+  attr :id, :string, required: true
   attr :title, :string, required: true
   attr :body, :string, required: true
 
   defp text_section(assigns) do
     ~H"""
-    <section class="brief-section">
+    <section id={@id} class="brief-section">
       <h2 class="brief-section__title">{@title}</h2>
       <p class="brief-section__body">{@body}</p>
     </section>
     """
   end
 
+  attr :id, :string, required: true
   attr :title, :string, required: true
   attr :items, :list, default: []
 
   defp list_section(assigns) do
     ~H"""
-    <section class="brief-section">
+    <section id={@id} class="brief-section">
       <h2 class="brief-section__title">{@title}</h2>
       <ul class="brief-section__list">
         <li :for={item <- @items}>{item}</li>
@@ -245,12 +267,13 @@ defmodule SparkdeckWeb.ProjectLive.Show do
     """
   end
 
+  attr :id, :string, required: true
   attr :title, :string, required: true
   attr :data, :map, default: %{}
 
   defp keyed_section(assigns) do
     ~H"""
-    <section class="brief-section">
+    <section id={@id} class="brief-section">
       <h2 class="brief-section__title">{@title}</h2>
       <div :for={{key, value} <- @data} class="brief-subsection">
         <h3 class="brief-subsection__title">{humanize_key(key)}</h3>
@@ -266,6 +289,7 @@ defmodule SparkdeckWeb.ProjectLive.Show do
     """
   end
 
+  attr :id, :string, required: true
   attr :content, :map, required: true
 
   defp landing_page_section(assigns) do
@@ -278,7 +302,7 @@ defmodule SparkdeckWeb.ProjectLive.Show do
       |> assign(:faq, map_value(assigns.content, "faq") || [])
 
     ~H"""
-    <section class="brief-section">
+    <section id={@id} class="brief-section">
       <h2 class="brief-section__title">Landing Page</h2>
 
       <div class="brief-subsection">
